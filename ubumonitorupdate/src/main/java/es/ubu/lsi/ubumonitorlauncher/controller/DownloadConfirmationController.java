@@ -29,7 +29,7 @@ public class DownloadConfirmationController {
 		dialogPane.setExpandableContent(textArea);
 		label.setText(MessageFormat.format(label.getText(), version));
 		Alert alert = new Alert(AlertType.CONFIRMATION);
-		alert.initStyle(StageStyle.UTILITY);
+		alert.initStyle(StageStyle.UNDECORATED);
 		alert.setDialogPane(dialogPane);
 		Optional<ButtonType> buttonType = alert.showAndWait();
 		

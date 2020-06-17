@@ -127,11 +127,11 @@ public class DownloadController {
 				return false;
 			}
 			DownloadConfirmationController downloadConfirmationController = fxmlLoader.getController();
-
+			boolean isConfirmed = downloadConfirmationController.isUserConfirmed(version, body);
 			askAgain = downloadConfirmationController.askAgain();
 
 			LOGGER.info("Ask again {}", downloadConfirmationController.askAgain());
-			return downloadConfirmationController.isUserConfirmed(version, body);
+			return isConfirmed;
 
 		}
 		return false;
