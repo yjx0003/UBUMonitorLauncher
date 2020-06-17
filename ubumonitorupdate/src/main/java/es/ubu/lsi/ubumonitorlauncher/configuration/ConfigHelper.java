@@ -1,4 +1,4 @@
-package es.ubu.lsi.ubumonitorupdate.configuration;
+package es.ubu.lsi.ubumonitorlauncher.configuration;
 
 import java.io.File;
 import java.io.FileInputStream;

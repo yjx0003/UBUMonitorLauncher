@@ -1,4 +1,4 @@
-package es.ubu.lsi.ubumonitorupdate.controller;
+package es.ubu.lsi.ubumonitorlauncher.controller;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,9 +17,9 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import es.ubu.lsi.ubumonitorupdate.Loader;
-import es.ubu.lsi.ubumonitorupdate.configuration.ConfigHelper;
-import es.ubu.lsi.ubumonitorupdate.connection.Connection;
+import es.ubu.lsi.ubumonitorlauncher.Loader;
+import es.ubu.lsi.ubumonitorlauncher.configuration.ConfigHelper;
+import es.ubu.lsi.ubumonitorlauncher.connection.Connection;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -31,7 +31,9 @@ import okio.BufferedSink;
 import okio.Okio;
 
 public class DownloadController {
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(DownloadController.class);
+
 	@FXML
 	private Label label;
 
@@ -45,8 +47,10 @@ public class DownloadController {
 	private String versionDir;
 	private Set<String> versionsFiles;
 	private ResourceBundle resourceBundle;
+	private boolean askAgain;
 
-	public void init(Loader loader, String checkUrl, ZonedDateTime lastChecked, String versionDir) {
+	public void init(Loader loader, String checkUrl, ZonedDateTime lastChecked, String versionDir, boolean askAgain) {
+		this.askAgain = askAgain;
 		this.loader = loader;
 		this.resourceBundle = loader.getResourceBundle();
 		this.lastChecked = lastChecked;
@@ -57,6 +61,7 @@ public class DownloadController {
 				: new HashSet<>(Arrays.asList(versionDirectory));
 
 		createGetDownloadUrlService().start();
+
 	}
 
 	private Service<List<String>> createGetDownloadUrlService() {
@@ -89,11 +94,13 @@ public class DownloadController {
 			}
 		};
 		service.setOnSucceeded(e -> {
-			
+
 			ConfigHelper.setProperty("lastUpdateCheck", ZonedDateTime.now(ZoneOffset.UTC));
 			List<String> list = service.getValue();
-			if (!list.isEmpty() && (loader.destFolderIsEmpty() || userConfirmation(list.get(1), list.get(2)))) {
-				
+			LOGGER.info("{}", list);
+			if (!list.isEmpty() && (versionsFiles.isEmpty()
+					|| !versionsFiles.contains(list.get(1)) && userConfirmation(list.get(1), list.get(2)))) {
+
 				new File(versionDir).mkdirs();
 				loader.getStage()
 						.show();
@@ -110,26 +117,38 @@ public class DownloadController {
 	}
 
 	private boolean userConfirmation(String version, String body) {
-		if (ConfigHelper.getProperty("askAgain", true)) {
+		if (askAgain) {
 			FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/DownloadConfirmation.fxml"),
 					resourceBundle);
 			try {
 				fxmlLoader.load();
 			} catch (IOException e) {
+				LOGGER.error("cannot load /view/DownloadConfirmation.fxml", e);
 				return false;
 			}
 			DownloadConfirmationController downloadConfirmationController = fxmlLoader.getController();
-			boolean isUserConfirmed = downloadConfirmationController.isUserConfirmed(version, body);
-			ConfigHelper.setProperty("askAgain", downloadConfirmationController.askAgain());
-			ConfigHelper.setProperty("lastChoiceDownload", isUserConfirmed);
-			LOGGER.info("User selected yes in confirmation download {}", isUserConfirmed);
+
+			askAgain = downloadConfirmationController.askAgain();
+
 			LOGGER.info("Ask again {}", downloadConfirmationController.askAgain());
-			return isUserConfirmed;
+			return downloadConfirmationController.isUserConfirmed(version, body);
+
 		}
-		return ConfigHelper.getProperty("lastChoiceDownload", true);
+		return false;
 
 	}
 
+	/**
+	 * Get downdload info as string
+	 * 
+	 * @param url           information for download files
+	 * @param patternFile   pattern matches filename
+	 * @param lastChecked   time last checked for updates
+	 * @param versionsFiles files in the destination forlder
+	 * @return list with 3 values ( downloadUrl, filename and body of the release)
+	 *         or empty list in case of the conditions is false
+	 * @throws IOException
+	 */
 	public List<String> getDownloadFile(String url, Pattern patternFile, ZonedDateTime lastChecked,
 			Set<String> versionsFiles) throws IOException {
 
@@ -142,10 +161,13 @@ public class DownloadController {
 				for (int i = 0; i < jsonArray.length(); ++i) {
 					JSONObject asset = jsonArray.getJSONObject(i);
 					String fileName = asset.getString("name");
+					// file matches name
 					if (patternFile.matcher(fileName)
-							.matches() && !versionsFiles.contains(fileName)
+							.matches()
+							// lastcheck is before the last update
 							&& (ZonedDateTime.parse(asset.getString("updated_at"))
 									.isAfter(lastChecked) || versionsFiles.isEmpty())) {
+
 						return Arrays.asList(asset.getString("browser_download_url"), fileName,
 								jsonObject.getString("body"));
 					}
@@ -210,6 +232,10 @@ public class DownloadController {
 		ConfigHelper.save();
 		loader.executeFile();
 		loader.close();
+	}
+
+	public boolean isAskAgain() {
+		return askAgain;
 	}
 
 }

@@ -1,4 +1,4 @@
-package es.ubu.lsi.ubumonitorupdate;
+package es.ubu.lsi.ubumonitorlauncher;
 
 import java.io.File;
 import java.time.ZoneOffset;
@@ -10,8 +10,8 @@ import java.util.ResourceBundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import es.ubu.lsi.ubumonitorupdate.configuration.ConfigHelper;
-import es.ubu.lsi.ubumonitorupdate.controller.DownloadController;
+import es.ubu.lsi.ubumonitorlauncher.configuration.ConfigHelper;
+import es.ubu.lsi.ubumonitorlauncher.controller.DownloadController;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -30,28 +30,39 @@ public class Loader extends Application {
 		resourceBundle = ResourceBundle.getBundle("messages/Messages");
 
 		ConfigHelper.initialize(AppInfo.CONFIGURATION_FILE);
-		primaryStage.initStyle(StageStyle.UNDECORATED);
-		primaryStage.centerOnScreen();
 
-		FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Download.fxml"), resourceBundle);
-		primaryStage.setScene(new Scene(loader.load()));
-		DownloadController downloadController = loader.getController();
-		
-		String lastCheck = ConfigHelper.getProperty("lastUpdateCheck", null);
-		
-		LOGGER.info("Last check time {}", lastCheck);
-		ZonedDateTime lasCheckZonedDateTime = lastCheck == null ? ZonedDateTime.now(ZoneOffset.UTC): ZonedDateTime.parse(lastCheck);
-		
-		downloadController.init(this, ConfigHelper.getProperty("checkUrlUpdate", AppInfo.DEFAULT_CHECK_URL),
-				lasCheckZonedDateTime, AppInfo.DEFAULT_VERSION_DIR);
+		boolean askAgain = ConfigHelper.getProperty("askAgain", true);
+
+		if (askAgain || destFolderIsEmpty(new File(AppInfo.DEFAULT_VERSION_DIR))) {
+			primaryStage.initStyle(StageStyle.UNDECORATED);
+			primaryStage.centerOnScreen();
+
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Download.fxml"), resourceBundle);
+			primaryStage.setScene(new Scene(loader.load()));
+			DownloadController downloadController = loader.getController();
+
+			String lastCheck = ConfigHelper.getProperty("lastUpdateCheck", null);
+
+			LOGGER.info("Last check time {}", lastCheck);
+			ZonedDateTime lasCheckZonedDateTime = lastCheck == null ? ZonedDateTime.now(ZoneOffset.UTC)
+					: ZonedDateTime.parse(lastCheck);
+
+			downloadController.init(this, ConfigHelper.getProperty("checkUrlUpdate", AppInfo.DEFAULT_CHECK_URL),
+					lasCheckZonedDateTime, AppInfo.DEFAULT_VERSION_DIR, askAgain);
+			ConfigHelper.setProperty(AppInfo.ASK_AGAIN, downloadController.isAskAgain());
+
+		} else {
+			executeFile();
+			close();
+		}
 
 	}
 
 	public void executeFile() {
 		try {
-			
+
 			File file = new File(ConfigHelper.getProperty("applicationPath", getDefaultPath()));
-			if (!file.exists() || file.isFile()) {
+			if (!file.exists() || !file.isFile()) {
 				file = new File(getDefaultPath());
 			}
 			String[] command = { System.getProperty("java.home") + "/bin/java", "-jar", file.getPath() };
@@ -71,6 +82,7 @@ public class Loader extends Application {
 	}
 
 	private String getDefaultPath() {
+		LOGGER.info("Executtin using the default path");
 		File dir = new File(AppInfo.DEFAULT_VERSION_DIR);
 		String[] jars = dir.list();
 		if (jars != null && jars.length != 0) {
@@ -97,8 +109,8 @@ public class Loader extends Application {
 		return resourceBundle;
 	}
 
-	public boolean destFolderIsEmpty() {
-		File dir = new File(AppInfo.DEFAULT_VERSION_DIR);
+	public boolean destFolderIsEmpty(File dir) {
+
 		String[] jars = dir.list();
 		return jars == null || jars.length == 0;
 

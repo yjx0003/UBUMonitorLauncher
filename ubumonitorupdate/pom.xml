@@ -4,11 +4,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>es.ubu.lsi</groupId>
-	<artifactId>ubumonitorupdate</artifactId>
+	<artifactId>ubumonitorlauncher</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>UBUMonitorAutoUpdater</name>
+	<name>UBUMonitorLauncher</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>
@@ -39,9 +39,9 @@
 			<version>4.4.1</version>
 		</dependency>
 		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.17</version>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.13.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -95,7 +95,7 @@
 						<manifest>
 							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 							<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-							<mainClass>es.ubu.lsi.ubumonitorupdate.UBUMonitorUpdateLauncher
+							<mainClass>es.ubu.lsi.ubumonitorlauncher.UBUMonitorLauncher
 							</mainClass>
 						</manifest>
 					</archive>

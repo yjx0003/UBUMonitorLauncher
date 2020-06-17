@@ -1,4 +1,4 @@
-package es.ubu.lsi.ubumonitorupdate.controller;
+package es.ubu.lsi.ubumonitorlauncher.controller;
 
 
 import java.text.MessageFormat;
@@ -33,7 +33,7 @@ public class DownloadConfirmationController {
 		alert.setDialogPane(dialogPane);
 		Optional<ButtonType> buttonType = alert.showAndWait();
 		
-		return buttonType.isPresent() && buttonType.get() == ButtonType.YES;
+		return buttonType.isPresent() && buttonType.get() == ButtonType.OK;
 	}
 	
 	public boolean askAgain() {

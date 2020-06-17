@@ -1,4 +1,4 @@
-package es.ubu.lsi.ubumonitorupdate.connection;
+package es.ubu.lsi.ubumonitorlauncher.connection;
 
 import java.io.IOException;
 import java.net.CookieHandler;
