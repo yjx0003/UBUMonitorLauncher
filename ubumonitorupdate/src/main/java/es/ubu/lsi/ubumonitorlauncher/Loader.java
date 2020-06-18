@@ -32,6 +32,7 @@ public class Loader extends Application {
 		ConfigHelper.initialize(AppInfo.CONFIGURATION_FILE);
 
 		boolean askAgain = ConfigHelper.getProperty("askAgain", true);
+		boolean betaTester = ConfigHelper.getProperty("betaTester", false);
 
 		if (askAgain || destFolderIsEmpty(new File(AppInfo.DEFAULT_VERSION_DIR))) {
 			primaryStage.initStyle(StageStyle.UNDECORATED);
@@ -48,7 +49,7 @@ public class Loader extends Application {
 					: ZonedDateTime.parse(lastCheck);
 
 			downloadController.init(this, ConfigHelper.getProperty("checkUrlUpdate", AppInfo.DEFAULT_CHECK_URL),
-					lasCheckZonedDateTime, AppInfo.DEFAULT_VERSION_DIR, askAgain);
+					lasCheckZonedDateTime, AppInfo.DEFAULT_VERSION_DIR, askAgain, betaTester);
 			ConfigHelper.setProperty(AppInfo.ASK_AGAIN, downloadController.isAskAgain());
 
 		} else {

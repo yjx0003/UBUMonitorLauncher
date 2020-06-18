@@ -48,9 +48,11 @@ public class DownloadController {
 	private Set<String> versionsFiles;
 	private ResourceBundle resourceBundle;
 	private boolean askAgain;
+	private boolean betaTester;
 
-	public void init(Loader loader, String checkUrl, ZonedDateTime lastChecked, String versionDir, boolean askAgain) {
+	public void init(Loader loader, String checkUrl, ZonedDateTime lastChecked, String versionDir, boolean askAgain, boolean betaTester) {
 		this.askAgain = askAgain;
+		this.betaTester = betaTester;
 		this.loader = loader;
 		this.resourceBundle = loader.getResourceBundle();
 		this.lastChecked = lastChecked;
@@ -60,6 +62,8 @@ public class DownloadController {
 		versionsFiles = versionDirectory == null ? Collections.emptySet()
 				: new HashSet<>(Arrays.asList(versionDirectory));
 
+		
+		
 		createGetDownloadUrlService().start();
 
 	}
@@ -156,7 +160,7 @@ public class DownloadController {
 			JSONObject jsonObject = new JSONObject(response.body()
 					.string());
 
-			if (!jsonObject.optBoolean("prerelease", false)) {
+			if (betaTester || !jsonObject.optBoolean("prerelease", false)) {
 				JSONArray jsonArray = jsonObject.getJSONArray("assets");
 				for (int i = 0; i < jsonArray.length(); ++i) {
 					JSONObject asset = jsonArray.getJSONObject(i);
