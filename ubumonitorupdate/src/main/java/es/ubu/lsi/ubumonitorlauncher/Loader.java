@@ -20,6 +20,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
 public class Loader extends Application {
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(Loader.class);
 	private Stage stage;
 	private ResourceBundle resourceBundle;
@@ -61,33 +62,35 @@ public class Loader extends Application {
 
 	public void executeFile() {
 		try {
-
-			File file = new File(ConfigHelper.getProperty("applicationPath", getDefaultPath()));
-			if (!file.exists() || !file.isFile()) {
-				file = new File(getDefaultPath());
+			String defaultPath = getDefaultPath();
+			File file = new File(
+					AppInfo.DEFAULT_VERSION_DIR + ConfigHelper.getProperty("applicationPath", defaultPath));
+			
+			if (!file.isFile()) {
+				file = new File(AppInfo.DEFAULT_VERSION_DIR + defaultPath);
 			}
-			String[] command = { System.getProperty("java.home") + "/bin/java", "-jar", file.getPath() };
+			String[] command = { System.getProperty("java.home") + "/bin/java", "-jar", file.getName() };
+			
 			if (LOGGER.isInfoEnabled()) {
 				LOGGER.info("Executting command app {}", Arrays.toString(command));
 			}
 
-			ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
+			ProcessBuilder builder = new ProcessBuilder(command).directory(new File(AppInfo.DEFAULT_VERSION_DIR).getAbsoluteFile());
 
 			builder.start();
 
 		} catch (Exception e) {
 			LOGGER.error("Cannot execute application", e);
-
-			close();
+			
 		}
 	}
 
 	private String getDefaultPath() {
 		LOGGER.info("Executtin using the default path");
-		File dir = new File(AppInfo.DEFAULT_VERSION_DIR);
-		String[] jars = dir.list();
+		File directory = new File(AppInfo.DEFAULT_VERSION_DIR);
+		String[] jars = directory.list((dir, name) -> name.matches(AppInfo.PATTERN_FILE));
 		if (jars != null && jars.length != 0) {
-			return AppInfo.DEFAULT_VERSION_DIR + Collections.max(Arrays.asList(jars));
+			return Collections.max(Arrays.asList(jars));
 		}
 		throw new IllegalStateException("Not found jars in the directory " + AppInfo.DEFAULT_VERSION_DIR);
 	}
@@ -110,9 +113,10 @@ public class Loader extends Application {
 		return resourceBundle;
 	}
 
-	public boolean destFolderIsEmpty(File dir) {
+	public boolean destFolderIsEmpty(File directory) {
 
-		String[] jars = dir.list();
+		String[] jars = directory.list((dir, name) -> name.matches(AppInfo.PATTERN_FILE));
+
 		return jars == null || jars.length == 0;
 
 	}

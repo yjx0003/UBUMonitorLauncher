@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<DialogPane fx:id="dialogPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="es.ubu.lsi.ubumonitorlauncher.controller.DownloadConfirmationController">
+<DialogPane fx:id="dialogPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="es.ubu.lsi.ubumonitorlauncher.controller.DownloadConfirmationController">
 	<content>
 		<VBox spacing="20.0">
 			<children>
@@ -28,7 +28,7 @@
 				<CheckBox fx:id="checkBox" mnemonicParsing="false" text="%checkBox.dontshowagain" />
 			</children>
          <padding>
-            <Insets left="10.0" top="20.0" />
+            <Insets bottom="20.0" left="10.0" right="20.0" top="20.0" />
          </padding>
 		</VBox>
 	</content>
@@ -47,6 +47,6 @@
       </ImageView>
    </header>
    <padding>
-      <Insets left="20.0" top="20.0" />
+      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
    </padding>
 </DialogPane>

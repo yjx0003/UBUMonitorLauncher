@@ -17,6 +17,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import es.ubu.lsi.ubumonitorlauncher.AppInfo;
 import es.ubu.lsi.ubumonitorlauncher.Loader;
 import es.ubu.lsi.ubumonitorlauncher.configuration.ConfigHelper;
 import es.ubu.lsi.ubumonitorlauncher.connection.Connection;
@@ -24,8 +25,11 @@ import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.layout.GridPane;
+import javafx.stage.Stage;
 import okhttp3.Response;
 import okio.BufferedSink;
 import okio.Okio;
@@ -40,6 +44,9 @@ public class DownloadController {
 	@FXML
 	private ProgressIndicator progress;
 
+	@FXML
+	private GridPane gridPane;
+
 	private Loader loader;
 	private Pattern patternFile;
 	private ZonedDateTime lastChecked;
@@ -50,7 +57,11 @@ public class DownloadController {
 	private boolean askAgain;
 	private boolean betaTester;
 
-	public void init(Loader loader, String checkUrl, ZonedDateTime lastChecked, String versionDir, boolean askAgain, boolean betaTester) {
+	private double xOffset = 0;
+	private double yOffset = 0;
+
+	public void init(Loader loader, String checkUrl, ZonedDateTime lastChecked, String versionDir, boolean askAgain,
+			boolean betaTester) {
 		this.askAgain = askAgain;
 		this.betaTester = betaTester;
 		this.loader = loader;
@@ -58,13 +69,25 @@ public class DownloadController {
 		this.lastChecked = lastChecked;
 		this.checkUrl = checkUrl;
 		this.versionDir = versionDir;
-		String[] versionDirectory = new File(versionDir).list();
+		String[] versionDirectory = new File(versionDir).list((dir, name)-> name.matches(AppInfo.PATTERN_FILE));
 		versionsFiles = versionDirectory == null ? Collections.emptySet()
 				: new HashSet<>(Arrays.asList(versionDirectory));
+		setMovableNode(gridPane, loader.getStage());
 
-		
-		
 		createGetDownloadUrlService().start();
+
+	}
+
+	private void setMovableNode(Node node, Stage stage) {
+		node.setOnMousePressed(event -> {
+			xOffset = event.getSceneX();
+			yOffset = event.getSceneY();
+		});
+
+		node.setOnMouseDragged(event -> {
+			stage.setX(event.getScreenX() - xOffset);
+			stage.setY(event.getScreenY() - yOffset);
+		});
 
 	}
 
@@ -90,7 +113,7 @@ public class DownloadController {
 							patternFile = Pattern.compile(jsonObject.getString("pattern"));
 
 						}
-						return getDownloadFile(url, patternFile, lastChecked, versionsFiles);
+						return getDownloadFile(url, patternFile, lastChecked);
 
 					}
 
@@ -99,12 +122,11 @@ public class DownloadController {
 		};
 		service.setOnSucceeded(e -> {
 
-			ConfigHelper.setProperty("lastUpdateCheck", ZonedDateTime.now(ZoneOffset.UTC));
 			List<String> list = service.getValue();
 			LOGGER.info("{}", list);
 			if (!list.isEmpty() && (versionsFiles.isEmpty()
-					|| !versionsFiles.contains(list.get(1)) && userConfirmation(list.get(1), list.get(2)))) {
-
+					|| userConfirmation(list.get(1), list.get(2)))) {
+				ConfigHelper.setProperty("lastUpdateCheck", ZonedDateTime.now(ZoneOffset.UTC));
 				new File(versionDir).mkdirs();
 				loader.getStage()
 						.show();
@@ -153,8 +175,7 @@ public class DownloadController {
 	 *         or empty list in case of the conditions is false
 	 * @throws IOException
 	 */
-	public List<String> getDownloadFile(String url, Pattern patternFile, ZonedDateTime lastChecked,
-			Set<String> versionsFiles) throws IOException {
+	public List<String> getDownloadFile(String url, Pattern patternFile, ZonedDateTime lastChecked) throws IOException {
 
 		try (Response response = Connection.getResponse(url)) {
 			JSONObject jsonObject = new JSONObject(response.body()
@@ -170,7 +191,7 @@ public class DownloadController {
 							.matches()
 							// lastcheck is before the last update
 							&& (ZonedDateTime.parse(asset.getString("updated_at"))
-									.isAfter(lastChecked) || versionsFiles.isEmpty())) {
+									.isAfter(lastChecked))) {
 
 						return Arrays.asList(asset.getString("browser_download_url"), fileName,
 								jsonObject.getString("body"));
@@ -194,7 +215,9 @@ public class DownloadController {
 	 * @return null
 	 */
 	private Service<Void> createDownloadService(String downloadUrl, String fileDest) {
+		File file = new File(fileDest);
 		Service<Void> service = new Service<Void>() {
+			
 
 			@Override
 			protected Task<Void> createTask() {
@@ -204,7 +227,7 @@ public class DownloadController {
 					protected Void call() throws Exception {
 
 						try (Response response = Connection.getResponse(downloadUrl);
-								BufferedSink sink = Okio.buffer(Okio.sink(new File(fileDest)))) {
+								BufferedSink sink = Okio.buffer(Okio.sink(file))) {
 							sink.writeAll(response.body()
 									.source());
 
@@ -217,7 +240,7 @@ public class DownloadController {
 
 		};
 		service.setOnSucceeded(e -> {
-			ConfigHelper.setProperty("applicationPath", fileDest);
+			ConfigHelper.setProperty("applicationPath", file.getName());
 			onFinalize();
 		});
 
