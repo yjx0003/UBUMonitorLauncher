@@ -53,6 +53,12 @@
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.7.26</version>
 		</dependency>
+		<dependency>
+			<groupId>com.atlassian.commonmark</groupId>
+			<artifactId>commonmark</artifactId>
+			<version>0.15.1</version>
+		</dependency>
+
 	</dependencies>
 	<build>
 		<plugins>

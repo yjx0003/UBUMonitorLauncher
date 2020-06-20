@@ -5,6 +5,10 @@ import java.text.MessageFormat;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
+
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
@@ -13,8 +17,8 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
+import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 
 public class DownloadConfirmationController implements Initializable {
@@ -28,10 +32,10 @@ public class DownloadConfirmationController implements Initializable {
 	private ResourceBundle resourceBundle;
 
 	public boolean isUserConfirmed(String version, String body) {
-		TextArea textArea = new TextArea(body);
-		textArea.setWrapText(true);
-		textArea.setEditable(false);
-		dialogPane.setExpandableContent(textArea);
+		
+		WebView webView = new WebView();
+		webView.getEngine().loadContent(parseMarkDown(body), "text/html");
+		dialogPane.setExpandableContent(webView);
 		label.setText(MessageFormat.format(label.getText(), version));
 		Alert alert = new Alert(AlertType.CONFIRMATION);
 		alert.setTitle(resourceBundle.getString("label.updateavailable"));
@@ -41,9 +45,17 @@ public class DownloadConfirmationController implements Initializable {
 		stageAlert.getIcons()
 				.add(new Image("/img/download.png"));
 		alert.setDialogPane(dialogPane);
+		
 		Optional<ButtonType> buttonType = alert.showAndWait();
 
 		return buttonType.isPresent() && buttonType.get() == ButtonType.OK;
+	}
+	
+	private String parseMarkDown(String markDown) {
+		Parser parser = Parser.builder().build();
+		Node document = parser.parse(markDown);
+		HtmlRenderer renderer = HtmlRenderer.builder().build();
+		return renderer.render(document); 
 	}
 
 	public boolean askAgain() {

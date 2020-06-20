@@ -14,6 +14,9 @@ public class AppInfo {
 
 	public static final String LOGGER_FILE_APPENDER = "log/" + APPLICATION_NAME_WITH_VERSION + ".log";
 	public static final String PATTERN_FILE = "^UBUMonitor.+.jar$";
+	
+	public static final String VM_ARGS = "vmArgs";
+	public static final String ARGS = "args";
 
 	private AppInfo() {
 		throw new UnsupportedOperationException();

@@ -56,6 +56,8 @@ public class DownloadController {
 	private ResourceBundle resourceBundle;
 	private boolean askAgain;
 	private boolean betaTester;
+	private String vmArgs;
+	private String args;
 
 	private double xOffset = 0;
 	private double yOffset = 0;
@@ -69,7 +71,7 @@ public class DownloadController {
 		this.lastChecked = lastChecked;
 		this.checkUrl = checkUrl;
 		this.versionDir = versionDir;
-		String[] versionDirectory = new File(versionDir).list((dir, name)-> name.matches(AppInfo.PATTERN_FILE));
+		String[] versionDirectory = new File(versionDir).list((dir, name) -> name.matches(AppInfo.PATTERN_FILE));
 		versionsFiles = versionDirectory == null ? Collections.emptySet()
 				: new HashSet<>(Arrays.asList(versionDirectory));
 		setMovableNode(gridPane, loader.getStage());
@@ -111,6 +113,8 @@ public class DownloadController {
 							url = jsonObject.getString("checkUrl");
 
 							patternFile = Pattern.compile(jsonObject.getString("pattern"));
+							vmArgs = jsonObject.optString(AppInfo.VM_ARGS, null);
+							args = jsonObject.optString(AppInfo.ARGS, null);
 
 						}
 						return getDownloadFile(url, patternFile, lastChecked);
@@ -124,8 +128,7 @@ public class DownloadController {
 
 			List<String> list = service.getValue();
 			LOGGER.info("{}", list);
-			if (!list.isEmpty() && (versionsFiles.isEmpty()
-					|| userConfirmation(list.get(1), list.get(2)))) {
+			if (!list.isEmpty() && (versionsFiles.isEmpty() || userConfirmation(list.get(1), list.get(2)))) {
 				ConfigHelper.setProperty("lastUpdateCheck", ZonedDateTime.now(ZoneOffset.UTC));
 				new File(versionDir).mkdirs();
 				loader.getStage()
@@ -155,7 +158,7 @@ public class DownloadController {
 			DownloadConfirmationController downloadConfirmationController = fxmlLoader.getController();
 			boolean isConfirmed = downloadConfirmationController.isUserConfirmed(version, body);
 			askAgain = downloadConfirmationController.askAgain();
-
+			ConfigHelper.setProperty("askAgain", askAgain);
 			LOGGER.info("Ask again {}", downloadConfirmationController.askAgain());
 			return isConfirmed;
 
@@ -217,7 +220,6 @@ public class DownloadController {
 	private Service<Void> createDownloadService(String downloadUrl, String fileDest) {
 		File file = new File(fileDest);
 		Service<Void> service = new Service<Void>() {
-			
 
 			@Override
 			protected Task<Void> createTask() {
@@ -241,6 +243,8 @@ public class DownloadController {
 		};
 		service.setOnSucceeded(e -> {
 			ConfigHelper.setProperty("applicationPath", file.getName());
+			ConfigHelper.setProperty("vmArgs", vmArgs);
+			ConfigHelper.setProperty("args", args);
 			onFinalize();
 		});
 
@@ -257,12 +261,27 @@ public class DownloadController {
 
 	private void onFinalize() {
 		ConfigHelper.save();
-		loader.executeFile();
+		loader.executeFile(ConfigHelper.getProperty(AppInfo.VM_ARGS, null),
+				ConfigHelper.getProperty(AppInfo.ARGS, null));
 		loader.close();
 	}
 
 	public boolean isAskAgain() {
 		return askAgain;
+	}
+
+	/**
+	 * @return the vmArgs
+	 */
+	public String getVmArgs() {
+		return vmArgs;
+	}
+
+	/**
+	 * @return the args
+	 */
+	public String getArgs() {
+		return args;
 	}
 
 }

@@ -3,8 +3,10 @@ package es.ubu.lsi.ubumonitorlauncher;
 import java.io.File;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import org.slf4j.Logger;
@@ -54,39 +56,46 @@ public class Loader extends Application {
 			ConfigHelper.setProperty(AppInfo.ASK_AGAIN, downloadController.isAskAgain());
 
 		} else {
-			executeFile();
+			executeFile(ConfigHelper.getProperty(AppInfo.VM_ARGS, null), ConfigHelper.getProperty(AppInfo.ARGS, null));
 			close();
 		}
 
 	}
 
-	public void executeFile() {
+	public void executeFile(String vmArgs, String args) {
 		try {
 			String defaultPath = getDefaultPath();
 			File file = new File(
 					AppInfo.DEFAULT_VERSION_DIR + ConfigHelper.getProperty("applicationPath", defaultPath));
-			
+
 			if (!file.isFile()) {
 				file = new File(AppInfo.DEFAULT_VERSION_DIR + defaultPath);
 			}
-			String[] command = { System.getProperty("java.home") + "/bin/java", "-jar", file.getName() };
-			
-			if (LOGGER.isInfoEnabled()) {
-				LOGGER.info("Executting command app {}", Arrays.toString(command));
+			List<String> command = new ArrayList<>();
+			command.add(System.getProperty("java.home") + "/bin/java");
+			if (vmArgs != null) {
+				command.add(vmArgs);
 			}
+			command.add("-jar");
+			command.add(file.getName());
+			if (args != null) {
+				command.add(args);
+			}
+			LOGGER.info("Executting command app {}", command);
 
-			ProcessBuilder builder = new ProcessBuilder(command).directory(new File(AppInfo.DEFAULT_VERSION_DIR).getAbsoluteFile());
+			ProcessBuilder builder = new ProcessBuilder(command)
+					.directory(new File(AppInfo.DEFAULT_VERSION_DIR).getAbsoluteFile());
 
 			builder.start();
 
 		} catch (Exception e) {
 			LOGGER.error("Cannot execute application", e);
-			
+
 		}
 	}
 
 	private String getDefaultPath() {
-		LOGGER.info("Executtin using the default path");
+		LOGGER.info("Executting using the default path");
 		File directory = new File(AppInfo.DEFAULT_VERSION_DIR);
 		String[] jars = directory.list((dir, name) -> name.matches(AppInfo.PATTERN_FILE));
 		if (jars != null && jars.length != 0) {

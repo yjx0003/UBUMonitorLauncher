@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<DialogPane fx:id="dialogPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="es.ubu.lsi.ubumonitorlauncher.controller.DownloadConfirmationController">
+<DialogPane fx:id="dialogPane" maxHeight="600.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="es.ubu.lsi.ubumonitorlauncher.controller.DownloadConfirmationController">
 	<content>
 		<VBox spacing="20.0">
 			<children>
