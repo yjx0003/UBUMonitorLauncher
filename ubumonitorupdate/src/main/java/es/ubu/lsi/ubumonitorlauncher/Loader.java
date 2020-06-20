@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,13 +57,14 @@ public class Loader extends Application {
 			ConfigHelper.setProperty(AppInfo.ASK_AGAIN, downloadController.isAskAgain());
 
 		} else {
-			executeFile(ConfigHelper.getProperty(AppInfo.VM_ARGS, null), ConfigHelper.getProperty(AppInfo.ARGS, null));
+			executeFile(convertJSONArrayToList(ConfigHelper.getArray(AppInfo.VM_ARGS)),
+					convertJSONArrayToList(ConfigHelper.getArray(AppInfo.ARGS)));
 			close();
 		}
 
 	}
 
-	public void executeFile(String vmArgs, String args) {
+	public void executeFile(List<String> vmArgs, List<String> args) {
 		try {
 			String defaultPath = getDefaultPath();
 			File file = new File(
@@ -73,13 +75,13 @@ public class Loader extends Application {
 			}
 			List<String> command = new ArrayList<>();
 			command.add(System.getProperty("java.home") + "/bin/java");
-			if (vmArgs != null) {
-				command.add(vmArgs);
+			if (vmArgs != null && !vmArgs.isEmpty()) {
+				command.addAll(vmArgs);
 			}
 			command.add("-jar");
 			command.add(file.getName());
-			if (args != null) {
-				command.add(args);
+			if (args != null && !args.isEmpty()) {
+				command.addAll(args);
 			}
 			LOGGER.info("Executting command app {}", command);
 
@@ -128,6 +130,19 @@ public class Loader extends Application {
 
 		return jars == null || jars.length == 0;
 
+	}
+
+	public static List<String> convertJSONArrayToList(JSONArray optJSONArray) {
+		if (optJSONArray == null) {
+			return Collections.emptyList();
+
+		}
+
+		List<String> list = new ArrayList<>(optJSONArray.length());
+		for (int i = 0; i < optJSONArray.length(); ++i) {
+			list.add(optJSONArray.getString(i));
+		}
+		return list;
 	}
 
 }

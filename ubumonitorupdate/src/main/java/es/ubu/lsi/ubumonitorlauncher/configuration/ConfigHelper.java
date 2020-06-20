@@ -23,7 +23,7 @@ public class ConfigHelper {
 
 		File file = new File(path);
 		ConfigHelper.path = path;
-		if (!file.isFile() && !file.createNewFile()) {
+		if (!file.isFile() && !file.getParentFile().mkdirs() && !file.createNewFile()) {
 			LOGGER.error("No se ha podido crear el fichero properties: {} ", path);
 			properties = new JSONObject();
 		} else { // si existe el fichero properties inicializamos los valores

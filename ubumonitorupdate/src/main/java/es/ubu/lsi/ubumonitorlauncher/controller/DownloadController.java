@@ -56,8 +56,8 @@ public class DownloadController {
 	private ResourceBundle resourceBundle;
 	private boolean askAgain;
 	private boolean betaTester;
-	private String vmArgs;
-	private String args;
+	private List<String> vmArgs;
+	private List<String> args;
 
 	private double xOffset = 0;
 	private double yOffset = 0;
@@ -110,11 +110,12 @@ public class DownloadController {
 						try (Response response = Connection.getResponse(checkUrl)) {
 							JSONObject jsonObject = new JSONObject(response.body()
 									.string());
+							LOGGER.info("Response server check url: {}", jsonObject.toString(4));
 							url = jsonObject.getString("checkUrl");
 
 							patternFile = Pattern.compile(jsonObject.getString("pattern"));
-							vmArgs = jsonObject.optString(AppInfo.VM_ARGS, null);
-							args = jsonObject.optString(AppInfo.ARGS, null);
+							vmArgs = Loader.convertJSONArrayToList(jsonObject.optJSONArray(AppInfo.VM_ARGS));
+							args = Loader.convertJSONArrayToList(jsonObject.optJSONArray(AppInfo.ARGS));
 
 						}
 						return getDownloadFile(url, patternFile, lastChecked);
@@ -194,7 +195,7 @@ public class DownloadController {
 							.matches()
 							// lastcheck is before the last update
 							&& (ZonedDateTime.parse(asset.getString("updated_at"))
-									.isAfter(lastChecked))) {
+									.isAfter(lastChecked) || versionsFiles.isEmpty())) {
 
 						return Arrays.asList(asset.getString("browser_download_url"), fileName,
 								jsonObject.getString("body"));
@@ -243,8 +244,8 @@ public class DownloadController {
 		};
 		service.setOnSucceeded(e -> {
 			ConfigHelper.setProperty("applicationPath", file.getName());
-			ConfigHelper.setProperty("vmArgs", vmArgs);
-			ConfigHelper.setProperty("args", args);
+			ConfigHelper.setProperty("vmArgs", new JSONArray(vmArgs));
+			ConfigHelper.setProperty("args", new JSONArray(args));
 			onFinalize();
 		});
 
@@ -261,8 +262,8 @@ public class DownloadController {
 
 	private void onFinalize() {
 		ConfigHelper.save();
-		loader.executeFile(ConfigHelper.getProperty(AppInfo.VM_ARGS, null),
-				ConfigHelper.getProperty(AppInfo.ARGS, null));
+		loader.executeFile(Loader.convertJSONArrayToList(ConfigHelper.getArray(AppInfo.VM_ARGS)),
+				Loader.convertJSONArrayToList(ConfigHelper.getArray(AppInfo.ARGS)));
 		loader.close();
 	}
 
@@ -273,15 +274,17 @@ public class DownloadController {
 	/**
 	 * @return the vmArgs
 	 */
-	public String getVmArgs() {
+	public List<String> getVmArgs() {
 		return vmArgs;
 	}
 
 	/**
 	 * @return the args
 	 */
-	public String getArgs() {
+	public List<String> getArgs() {
 		return args;
 	}
+
+	
 
 }
