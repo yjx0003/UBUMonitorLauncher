@@ -19,6 +19,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
@@ -44,6 +45,9 @@ public class Loader extends Application {
 
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Download.fxml"), resourceBundle);
 			primaryStage.setScene(new Scene(loader.load()));
+			primaryStage.setTitle(resourceBundle.getString("label.updateavailable"));
+			primaryStage.getIcons()
+					.add(new Image("/img/download.png"));
 			DownloadController downloadController = loader.getController();
 
 			String lastCheck = ConfigHelper.getProperty("lastUpdateCheck", null);
