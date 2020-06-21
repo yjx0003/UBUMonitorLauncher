@@ -182,8 +182,8 @@ public class DownloadController {
 	public List<String> getDownloadFile(String url, Pattern patternFile, ZonedDateTime lastChecked) throws IOException {
 
 		try (Response response = Connection.getResponse(url)) {
-			JSONObject jsonObject = new JSONObject(response.body()
-					.string());
+			JSONObject jsonObject = new JSONArray(response.body()
+					.string()).getJSONObject(0);
 
 			if (betaTester || !jsonObject.optBoolean("prerelease", false)) {
 				JSONArray jsonArray = jsonObject.getJSONArray("assets");
