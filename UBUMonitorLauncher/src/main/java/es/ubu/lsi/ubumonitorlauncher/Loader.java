@@ -1,6 +1,7 @@
 package es.ubu.lsi.ubumonitorlauncher;
 
 import java.io.File;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -36,8 +37,8 @@ public class Loader extends Application {
 
 		ConfigHelper.initialize(AppInfo.CONFIGURATION_FILE);
 
-		boolean askAgain = ConfigHelper.getProperty("askAgain", true);
-		boolean betaTester = ConfigHelper.getProperty("betaTester", false);
+		boolean askAgain = ConfigHelper.getProperty(AppInfo.ASK_AGAIN, true);
+		boolean betaTester = ConfigHelper.getProperty(AppInfo.BETA_TESTER, false);
 
 		if (askAgain || destFolderIsEmpty(new File(AppInfo.DEFAULT_VERSION_DIR))) {
 			primaryStage.initStyle(StageStyle.UNDECORATED);
@@ -50,10 +51,10 @@ public class Loader extends Application {
 					.add(new Image("/img/download.png"));
 			DownloadController downloadController = loader.getController();
 
-			String lastCheck = ConfigHelper.getProperty("lastUpdateCheck", null);
+			String lastCheck = ConfigHelper.getProperty(AppInfo.LAST_UPDATE_DOWNLOAD, null);
 
 			LOGGER.info("Last check time {}", lastCheck);
-			ZonedDateTime lasCheckZonedDateTime = lastCheck == null ? ZonedDateTime.now(ZoneOffset.UTC)
+			ZonedDateTime lasCheckZonedDateTime = lastCheck == null ? Instant.EPOCH.atZone(ZoneOffset.UTC)
 					: ZonedDateTime.parse(lastCheck);
 
 			downloadController.init(this, ConfigHelper.getProperty("checkUrlUpdate", AppInfo.DEFAULT_CHECK_URL),

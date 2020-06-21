@@ -2,7 +2,6 @@ package es.ubu.lsi.ubumonitorlauncher.controller;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -130,7 +129,7 @@ public class DownloadController {
 			List<String> list = service.getValue();
 			LOGGER.info("{}", list);
 			if (!list.isEmpty() && (versionsFiles.isEmpty() || userConfirmation(list.get(1), list.get(2)))) {
-				ConfigHelper.setProperty("lastUpdateCheck", ZonedDateTime.now(ZoneOffset.UTC));
+				ConfigHelper.setProperty(AppInfo.LAST_UPDATE_DOWNLOAD, ZonedDateTime.parse(list.get(3)));
 				new File(versionDir).mkdirs();
 				loader.getStage()
 						.show();
@@ -173,35 +172,55 @@ public class DownloadController {
 	 * 
 	 * @param url           information for download files
 	 * @param patternFile   pattern matches filename
-	 * @param lastChecked   time last checked for updates
+	 * @param lastUpdate    time last checked for updates
 	 * @param versionsFiles files in the destination forlder
 	 * @return list with 3 values ( downloadUrl, filename and body of the release)
 	 *         or empty list in case of the conditions is false
 	 * @throws IOException
 	 */
-	public List<String> getDownloadFile(String url, Pattern patternFile, ZonedDateTime lastChecked) throws IOException {
+	public List<String> getDownloadFile(String url, Pattern patternFile, ZonedDateTime lastUpdate) throws IOException {
 
 		try (Response response = Connection.getResponse(url)) {
-			JSONObject jsonObject = new JSONArray(response.body()
-					.string()).getJSONObject(0);
+			JSONArray jsonArray = new JSONArray(response.body()
+					.string());
 
-			if (betaTester || !jsonObject.optBoolean("prerelease", false)) {
-				JSONArray jsonArray = jsonObject.getJSONArray("assets");
-				for (int i = 0; i < jsonArray.length(); ++i) {
-					JSONObject asset = jsonArray.getJSONObject(i);
-					String fileName = asset.getString("name");
-					// file matches name
-					if (patternFile.matcher(fileName)
-							.matches()
-							// lastcheck is before the last update
-							&& (ZonedDateTime.parse(asset.getString("updated_at"))
-									.isAfter(lastChecked) || versionsFiles.isEmpty())) {
-
-						return Arrays.asList(asset.getString("browser_download_url"), fileName,
-								jsonObject.getString("body"));
+			for (int i = 0; i < jsonArray.length(); ++i) {
+				JSONObject jsonObject = jsonArray.getJSONObject(i);
+				if (betaTester || !jsonObject.optBoolean("prerelease", false)) {
+					JSONArray assets = jsonObject.getJSONArray("assets");
+					List<String> info = getAsset(patternFile, lastUpdate, jsonObject, assets);
+					if (!info.isEmpty()) {
+						return info;
 					}
-
 				}
+
+			}
+		}
+
+		return Collections.emptyList();
+
+	}
+
+	private List<String> getAsset(Pattern patternFile, ZonedDateTime lastUpdate, JSONObject jsonObject,
+			JSONArray assets) {
+		for (int j = 0; j < assets.length(); ++j) {
+			JSONObject asset = assets.getJSONObject(j);
+			String fileName = asset.getString("name");
+			String updatedAt = asset.getString("updated_at");
+			// file matches name
+			LOGGER.info("Filename:{}", fileName);
+			LOGGER.info("Updated at: {}", updatedAt);
+			LOGGER.info("lastDownload {}", lastUpdate);
+			if (patternFile.matcher(fileName)
+					.matches()) {
+				// lastcheck is before the last update
+
+				return ZonedDateTime.parse(updatedAt)
+						.isAfter(lastUpdate)
+								? Arrays.asList(asset.getString("browser_download_url"), fileName,
+										jsonObject.getString("body"), updatedAt)
+								: Collections.emptyList();
+
 			}
 		}
 		return Collections.emptyList();
@@ -284,7 +303,5 @@ public class DownloadController {
 	public List<String> getArgs() {
 		return args;
 	}
-
-	
 
 }

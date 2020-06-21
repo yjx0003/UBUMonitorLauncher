@@ -17,6 +17,8 @@ public class AppInfo {
 	
 	public static final String VM_ARGS = "vmArgs";
 	public static final String ARGS = "args";
+	public static final String LAST_UPDATE_DOWNLOAD = "lastUpdateDownload";
+	public static final String BETA_TESTER = "betaTester";
 
 	private AppInfo() {
 		throw new UnsupportedOperationException();
