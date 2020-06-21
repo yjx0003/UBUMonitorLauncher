@@ -110,7 +110,7 @@ public class DownloadController {
 						try (Response response = Connection.getResponse(checkUrl)) {
 							JSONObject jsonObject = new JSONObject(response.body()
 									.string());
-							LOGGER.info("Response server check url: {}", jsonObject.toString());
+							LOGGER.info("Response server check url: {}", jsonObject);
 							url = jsonObject.getString("checkUrl");
 
 							patternFile = Pattern.compile(jsonObject.getString("pattern"));

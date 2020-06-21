@@ -2,7 +2,7 @@ package es.ubu.lsi.ubumonitorlauncher;
 
 public class AppInfo {
 
-	public static final String VERSION = "0.1-stable";
+	public static final String VERSION = "0.9.0-dev";
 	public static final String APPLICATION_NAME = "UBUMonitor Launcher";
 	private static final String APPLICATION_NAME_WITH_VERSION = APPLICATION_NAME + " " + VERSION;
 
