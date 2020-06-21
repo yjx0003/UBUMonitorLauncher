@@ -38,7 +38,7 @@ public class Loader extends Application {
 		ConfigHelper.initialize(AppInfo.CONFIGURATION_FILE);
 
 		boolean askAgain = ConfigHelper.getProperty(AppInfo.ASK_AGAIN, true);
-		boolean betaTester = ConfigHelper.getProperty(AppInfo.BETA_TESTER, false);
+		boolean betaTester = ConfigHelper.getProperty(AppInfo.BETA_TESTER, true);
 
 		if (askAgain || destFolderIsEmpty(new File(AppInfo.DEFAULT_VERSION_DIR))) {
 			primaryStage.initStyle(StageStyle.UNDECORATED);

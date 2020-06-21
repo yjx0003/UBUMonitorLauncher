@@ -265,6 +265,7 @@ public class DownloadController {
 			ConfigHelper.setProperty("applicationPath", file.getName());
 			ConfigHelper.setProperty("vmArgs", new JSONArray(vmArgs));
 			ConfigHelper.setProperty("args", new JSONArray(args));
+			ConfigHelper.setProperty("betaTester", betaTester);
 			onFinalize();
 		});
 
