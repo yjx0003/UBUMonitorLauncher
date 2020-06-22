@@ -2,6 +2,7 @@ package es.ubu.lsi.ubumonitorlauncher.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,6 +21,7 @@ import es.ubu.lsi.ubumonitorlauncher.AppInfo;
 import es.ubu.lsi.ubumonitorlauncher.Loader;
 import es.ubu.lsi.ubumonitorlauncher.configuration.ConfigHelper;
 import es.ubu.lsi.ubumonitorlauncher.connection.Connection;
+import es.ubu.lsi.ubumonitorlauncher.model.DownloadInfo;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -92,15 +94,15 @@ public class DownloadController {
 
 	}
 
-	private Service<List<String>> createGetDownloadUrlService() {
-		Service<List<String>> service = new Service<List<String>>() {
+	private Service<DownloadInfo> createGetDownloadUrlService() {
+		Service<DownloadInfo> service = new Service<DownloadInfo>() {
 
 			@Override
-			protected Task<List<String>> createTask() {
-				return new Task<List<String>>() {
+			protected Task<DownloadInfo> createTask() {
+				return new Task<DownloadInfo>() {
 
 					@Override
-					protected List<String> call() throws Exception {
+					protected DownloadInfo call() throws Exception {
 						String url = null;
 
 						// Check in the online configuration file what server download the files, GitHub
@@ -126,15 +128,16 @@ public class DownloadController {
 		};
 		service.setOnSucceeded(e -> {
 
-			List<String> list = service.getValue();
-			LOGGER.info("{}", list);
-			if (!list.isEmpty() && (versionsFiles.isEmpty() || userConfirmation(list.get(1), list.get(2)))) {
-				ConfigHelper.setProperty(AppInfo.LAST_UPDATE_DOWNLOAD, ZonedDateTime.parse(list.get(3)));
+			DownloadInfo downloadInfo = service.getValue();
+			LOGGER.info("{}", downloadInfo);
+			if (downloadInfo!= null && (versionsFiles.isEmpty() || userConfirmation(downloadInfo.getReleaseName(), downloadInfo.getReleaseDescription()))) {
+				ConfigHelper.setProperty(AppInfo.LAST_UPDATE_DOWNLOAD, downloadInfo.getUpdatedAt());
 				new File(versionDir).mkdirs();
+				label.setText(MessageFormat.format(label.getText(), downloadInfo.getReleaseName()));
 				loader.getStage()
 						.show();
-				LOGGER.info("Downloading version {} in {}", list.get(0), list.get(1));
-				createDownloadService(list.get(0), versionDir + list.get(1)).start();
+				LOGGER.info("Downloading version {} in {}", downloadInfo.getDownloadUrl(), downloadInfo.getFileName());
+				createDownloadService(downloadInfo.getDownloadUrl(), versionDir + downloadInfo.getFileName()).start();
 
 			} else {
 				onFinalize();
@@ -178,7 +181,7 @@ public class DownloadController {
 	 *         or empty list in case of the conditions is false
 	 * @throws IOException
 	 */
-	public List<String> getDownloadFile(String url, Pattern patternFile, ZonedDateTime lastUpdate) throws IOException {
+	public DownloadInfo getDownloadFile(String url, Pattern patternFile, ZonedDateTime lastUpdate) throws IOException {
 
 		try (Response response = Connection.getResponse(url)) {
 			JSONArray jsonArray = new JSONArray(response.body()
@@ -188,8 +191,8 @@ public class DownloadController {
 				JSONObject jsonObject = jsonArray.getJSONObject(i);
 				if (betaTester || !jsonObject.optBoolean("prerelease", false)) {
 					JSONArray assets = jsonObject.getJSONArray("assets");
-					List<String> info = getAsset(patternFile, lastUpdate, jsonObject, assets);
-					if (!info.isEmpty()) {
+					DownloadInfo info = getAsset(patternFile, lastUpdate, jsonObject, assets);
+					if (info != null) {
 						return info;
 					}
 				}
@@ -197,16 +200,16 @@ public class DownloadController {
 			}
 		}
 
-		return Collections.emptyList();
+		return null;
 
 	}
 
-	private List<String> getAsset(Pattern patternFile, ZonedDateTime lastUpdate, JSONObject jsonObject,
+	private DownloadInfo getAsset(Pattern patternFile, ZonedDateTime lastUpdate, JSONObject jsonObject,
 			JSONArray assets) {
 		for (int j = 0; j < assets.length(); ++j) {
 			JSONObject asset = assets.getJSONObject(j);
 			String fileName = asset.getString("name");
-			String updatedAt = asset.getString("updated_at");
+			ZonedDateTime updatedAt = ZonedDateTime.parse(asset.getString("updated_at"));
 			// file matches name
 			LOGGER.info("Filename:{}", fileName);
 			LOGGER.info("Updated at: {}", updatedAt);
@@ -214,16 +217,20 @@ public class DownloadController {
 			if (patternFile.matcher(fileName)
 					.matches()) {
 				// lastcheck is before the last update
-
-				return ZonedDateTime.parse(updatedAt)
-						.isAfter(lastUpdate)
-								? Arrays.asList(asset.getString("browser_download_url"), fileName,
-										jsonObject.getString("body"), updatedAt)
-								: Collections.emptyList();
+				if (updatedAt.isAfter(lastUpdate)) {
+					DownloadInfo downloadInfo = new DownloadInfo();
+					downloadInfo.setReleaseName(jsonObject.getString("name"));
+					downloadInfo.setFileName(fileName);
+					downloadInfo.setDownloadUrl(asset.getString("browser_download_url"));
+					downloadInfo.setUpdatedAt(updatedAt);
+					downloadInfo.setReleaseDescription(jsonObject.getString("body"));
+					return downloadInfo;
+				}
+				return null;
 
 			}
 		}
-		return Collections.emptyList();
+		return null;
 	}
 
 	public Pattern getPatternFile() {
