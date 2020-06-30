@@ -9,6 +9,7 @@ public class DownloadInfo {
 	private String releaseDescription;
 	private String downloadUrl;
 	private ZonedDateTime updatedAt;
+	private boolean beta;
 
 	public String getReleaseName() {
 		return releaseName;
@@ -48,6 +49,14 @@ public class DownloadInfo {
 
 	public void setUpdatedAt(ZonedDateTime uploadedAt) {
 		this.updatedAt = uploadedAt;
+	}
+
+	public boolean isBeta() {
+		return beta;
+	}
+
+	public void setBeta(boolean beta) {
+		this.beta = beta;
 	}
 
 	@Override

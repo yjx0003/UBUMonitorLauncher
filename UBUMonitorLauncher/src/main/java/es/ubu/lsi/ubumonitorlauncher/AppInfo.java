@@ -1,5 +1,11 @@
 package es.ubu.lsi.ubumonitorlauncher;
 
+
+/**
+ * Utility class info for the application
+ * @author Yi Peng Ji
+ *
+ */
 public class AppInfo {
 
 	public static final String VERSION = "0.9.0-dev";

@@ -24,6 +24,11 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
+/**
+ * Load resources as internationalizarion messages and the configuration file. Download and load the main application.
+ * @author Yi Peng Ji
+ *
+ */
 public class Loader extends Application {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Loader.class);
@@ -41,7 +46,7 @@ public class Loader extends Application {
 		boolean betaTester = ConfigHelper.getProperty(AppInfo.BETA_TESTER, true);
 
 		if (askAgain || destFolderIsEmpty(new File(AppInfo.DEFAULT_VERSION_DIR))) {
-			primaryStage.initStyle(StageStyle.UNDECORATED);
+			primaryStage.initStyle(StageStyle.UNDECORATED); 
 			primaryStage.centerOnScreen();
 
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Download.fxml"), resourceBundle);

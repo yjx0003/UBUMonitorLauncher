@@ -130,7 +130,8 @@ public class DownloadController {
 
 			DownloadInfo downloadInfo = service.getValue();
 			LOGGER.info("{}", downloadInfo);
-			if (downloadInfo!= null && (versionsFiles.isEmpty() || userConfirmation(downloadInfo.getReleaseName(), downloadInfo.getReleaseDescription()))) {
+			if (downloadInfo != null && (versionsFiles.isEmpty() || userConfirmation(downloadInfo.getReleaseName(),
+					downloadInfo.getReleaseDescription(), downloadInfo.isBeta()))) {
 				ConfigHelper.setProperty(AppInfo.LAST_UPDATE_DOWNLOAD, downloadInfo.getUpdatedAt());
 				new File(versionDir).mkdirs();
 				label.setText(MessageFormat.format(label.getText(), downloadInfo.getReleaseName()));
@@ -148,7 +149,7 @@ public class DownloadController {
 		return service;
 	}
 
-	private boolean userConfirmation(String version, String body) {
+	private boolean userConfirmation(String version, String body, boolean beta) {
 		if (askAgain) {
 			FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/DownloadConfirmation.fxml"),
 					resourceBundle);
@@ -159,7 +160,7 @@ public class DownloadController {
 				return false;
 			}
 			DownloadConfirmationController downloadConfirmationController = fxmlLoader.getController();
-			boolean isConfirmed = downloadConfirmationController.isUserConfirmed(version, body);
+			boolean isConfirmed = downloadConfirmationController.isUserConfirmed(version, body, beta);
 			askAgain = downloadConfirmationController.askAgain();
 			ConfigHelper.setProperty("askAgain", askAgain);
 			LOGGER.info("Ask again {}", downloadConfirmationController.askAgain());
@@ -224,6 +225,7 @@ public class DownloadController {
 					downloadInfo.setDownloadUrl(asset.getString("browser_download_url"));
 					downloadInfo.setUpdatedAt(updatedAt);
 					downloadInfo.setReleaseDescription(jsonObject.getString("body"));
+					downloadInfo.setBeta(jsonObject.getBoolean("prerelease"));
 					return downloadInfo;
 				}
 				return null;
